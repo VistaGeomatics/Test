@@ -1113,12 +1113,13 @@
               <label for="working_supervisor_name">Contact Procedures – Call Supervisor: Name</label>
               <input type="text" id="working_supervisor_name" name="working_supervisor_name">
             </div>
-            <div style="flex:1 1 20%;">
+            <div style="flex:1 1 24%;">
               <label for="working_supervisor_phone">Supervisor Phone</label>
               <div class="phone-quick-wrap">
                 <input type="tel" id="working_supervisor_phone" name="working_supervisor_phone" placeholder="403-555-0100">
                 <a href="#" id="callSupervisorBtn" class="btn-quick-call disabled" title="Call Supervisor">📞</a>
-                <a href="#" id="textSupervisorBtn" class="btn-quick-call disabled" title="Text Supervisor">💬</a>
+                <a href="#" id="textCheckInBtn" class="btn-quick-call disabled" title="Text Supervisor: Checking In">✅</a>
+                <a href="#" id="textCheckOutBtn" class="btn-quick-call disabled" title="Text Supervisor: Checking Out">🏁</a>
               </div>
             </div>
             <div style="flex:1 1 25%;">
@@ -1770,7 +1771,7 @@
   </div>
 </div>
 
-<div class="version-stamp" id="versionStamp">v5.8</div>
+<div class="version-stamp" id="versionStamp">v6.0</div>
 
 <!-- OFFLINE NOTE:
      Put these files beside this HTML for offline use:
@@ -1972,28 +1973,75 @@
   // ============================================================
   (function initQuickCallButtons() {
     function sanitizePhone(v) { return (v || '').replace(/[^\d+]/g, ''); }
-    function wireCallText(inputId, callBtnId, textBtnId) {
+
+    function composeCheckMessage(action) {
+      const name = (document.getElementById('developed_by')?.value || '').trim() || 'Crew member';
+      const location = (document.getElementById('location')?.value || '').trim();
+      const timeStr = new Date().toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit', hour12: true });
+      const verb = action === 'checkout' ? 'checking out' : 'checking in';
+      return `${name} is ${verb} at ${location || 'the site'}, ${timeStr}`;
+    }
+
+    function fillNow(fieldId) {
+      const field = document.getElementById(fieldId);
+      if (!field) return;
+      const now = new Date();
+      field.value = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      field.dispatchEvent(new Event('input', { bubbles: true }));
+      field.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    function wireCallText(inputId, callBtnId, checkInBtnId, checkOutBtnId) {
       const input = document.getElementById(inputId);
       const callBtn = document.getElementById(callBtnId);
-      const textBtn = textBtnId ? document.getElementById(textBtnId) : null;
+      const checkInBtn = checkInBtnId ? document.getElementById(checkInBtnId) : null;
+      const checkOutBtn = checkOutBtnId ? document.getElementById(checkOutBtnId) : null;
       if (!input || !callBtn) return;
+
       function update() {
         const num = sanitizePhone(input.value);
         if (num) {
           callBtn.href = 'tel:' + num;
           callBtn.classList.remove('disabled');
-          if (textBtn) { textBtn.href = 'sms:' + num; textBtn.classList.remove('disabled'); }
+          if (checkInBtn) checkInBtn.classList.remove('disabled');
+          if (checkOutBtn) checkOutBtn.classList.remove('disabled');
         } else {
           callBtn.href = '#';
           callBtn.classList.add('disabled');
-          if (textBtn) { textBtn.href = '#'; textBtn.classList.add('disabled'); }
+          if (checkInBtn) checkInBtn.classList.add('disabled');
+          if (checkOutBtn) checkOutBtn.classList.add('disabled');
         }
       }
+
+      // Built at tap time (not on every keystroke) so the timestamp in
+      // the message reflects the actual moment of sending.
+      if (checkInBtn) {
+        checkInBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const num = sanitizePhone(input.value);
+          if (!num) return;
+          fillNow('check_in_time');
+          const body = encodeURIComponent(composeCheckMessage('check'));
+          // iOS/iPadOS Messages expects "&body=", not the standard "?body="
+          window.location.href = 'sms:' + num + '&body=' + body;
+        });
+      }
+      if (checkOutBtn) {
+        checkOutBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const num = sanitizePhone(input.value);
+          if (!num) return;
+          fillNow('check_out_time');
+          const body = encodeURIComponent(composeCheckMessage('checkout'));
+          window.location.href = 'sms:' + num + '&body=' + body;
+        });
+      }
+
       input.addEventListener('input', update);
       window.addEventListener('load', () => setTimeout(update, 700)); // after autosave restore
       update();
     }
-    wireCallText('working_supervisor_phone', 'callSupervisorBtn', 'textSupervisorBtn');
+    wireCallText('working_supervisor_phone', 'callSupervisorBtn', 'textCheckInBtn', 'textCheckOutBtn');
   })();
 
   // ============================================================
