@@ -77,7 +77,7 @@
     .header-left h1 .brand-bold { font-weight: 700; }
     .header-left h1 .brand-regular { font-weight: 400; }
 
-    .header-logo { height: 170px; filter: drop-shadow(0 5px 14px rgba(0,0,0,0.35)); }
+    .header-logo { height: auto; max-height: 170px; width: auto; max-width: 42%; filter: drop-shadow(0 5px 14px rgba(0,0,0,0.35)); }
 
     .page-title-bar {
       position: relative;
@@ -182,6 +182,10 @@
     .small-text { font-size: 0.74rem; color: var(--text-muted); }
 
     table { width: 100%; border-collapse: collapse; font-size: 0.75rem; margin-top: 4px; }
+    .table-scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 10px; }
+    @media (max-width: 700px) {
+      #jobHazardsTable { min-width: 640px; }
+    }
     th, td { border: 1px solid var(--border-soft); padding: 3px 4px; vertical-align: top; }
     th { background: #e8f0fb; font-weight: 600; color: var(--vista-blue-dark); }
     td { background: #f9fbff; }
@@ -209,8 +213,8 @@
       color: var(--vista-blue-dark);
       margin-bottom: 6px;
     }
-    .legend-table{ margin-top: 0; font-size: 0.74rem; }
-    .legend-table td{ background:#ffffff; }
+    .legend-table{ margin-top: 0; font-size: 0.74rem; table-layout: fixed; width: 100%; }
+    .legend-table td{ background:#ffffff; word-wrap: break-word; overflow-wrap: break-word; }
     .legend-num{
       width: 34px;
       font-weight: 700;
@@ -264,6 +268,34 @@
 
     .btn-secondary { background: #f3f4f6; color: var(--text-main); border: 1px solid #d6d7dd; }
 
+    /* Now buttons for time fields */
+    .time-now-wrap { display: flex; gap: 5px; align-items: center; }
+    .time-now-wrap input { flex: 1; min-width: 0; }
+    .btn-now {
+      flex: 0 0 auto; padding: 0 10px; height: 34px; font-size: 0.7rem;
+      border-radius: 8px; border: 1px solid var(--border-soft); background: #f3f4f6;
+      color: var(--text-main); cursor: pointer; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .btn-now:active { background: #e5e7eb; }
+
+    /* Voice dictation buttons */
+    .voice-wrap { position: relative; }
+    .voice-wrap textarea { padding-right: 30px; }
+    .voice-btn {
+      position: absolute; top: 4px; right: 4px; width: 22px; height: 22px;
+      border-radius: 50%; border: 1px solid var(--border-soft); background: #fff;
+      cursor: pointer; font-size: 0.72rem; display: flex; align-items: center; justify-content: center;
+      padding: 0; line-height: 1; z-index: 2;
+    }
+    .voice-btn.recording { background: #dc2626; color: #fff; border-color: #dc2626; animation: voicePulse 1s infinite; }
+    @keyframes voicePulse { 0%,100% { opacity: 1; } 50% { opacity: 0.55; } }
+    .voice-hint {
+      position: absolute; top: 28px; right: 4px; max-width: 170px; text-align: left;
+      background: #111827; color: #fff; font-size: 0.62rem; padding: 6px 8px; border-radius: 6px;
+      z-index: 3; box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+    }
+
     /* ── Missing-required-field highlighting (applied after a failed export attempt) ── */
     .field-missing {
       border-color: rgba(185,28,28,0.65) !important;
@@ -276,14 +308,20 @@
       border-radius: 8px;
     }
 
-    /* ── Outdoor Mode toggle (screen only — never touches the PDF export) ── */
-    #outdoorModeToggle {
-      position: sticky;
-      top: 8px;
-      z-index: 50;
-      display: block;
+    /* ── Top controls (screen only — never touch the PDF export) ── */
+    .top-controls-wrap {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
       margin: 8px auto 0;
       max-width: 1050px;
+    }
+    #outdoorModeToggle, #historyBtn {
+      position: relative;
+      z-index: 5;
+      margin: 0;
       padding: 8px 14px;
       border-radius: 999px;
       border: 1px solid var(--border-soft);
@@ -301,6 +339,74 @@
       color: #ffec3d;
       border-color: #111827;
     }
+
+    /* Inline quick-call/text buttons next to phone fields */
+    .phone-quick-wrap { display: flex; gap: 4px; align-items: center; }
+    .phone-quick-wrap input { flex: 1; min-width: 0; }
+    .btn-quick-call {
+      flex: 0 0 auto; width: 34px; height: 34px; border-radius: 8px;
+      border: 1px solid var(--border-soft); background: #f3f4f6;
+      display: flex; align-items: center; justify-content: center;
+      text-decoration: none; font-size: 1rem; cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn-quick-call.disabled { opacity: 0.35; pointer-events: none; }
+
+    /* ── Generic modal (History + Photo Annotation) ── */
+    .vista-modal {
+      display: none; position: fixed; inset: 0; z-index: 2100;
+      background: rgba(11,48,69,0.55); backdrop-filter: blur(3px);
+      align-items: center; justify-content: center; padding: 16px;
+    }
+    .vista-modal.open { display: flex; }
+    .vista-modal-box {
+      background: #fff; border-radius: 18px; box-shadow: 0 20px 60px rgba(5,41,66,0.28);
+      padding: 20px; max-width: 560px; width: 100%; max-height: 88vh;
+      overflow-y: auto; position: relative;
+    }
+    .vista-modal-title {
+      font-family: "Montserrat", sans-serif; font-weight: 700; font-size: 1rem;
+      color: var(--vista-blue-dark); margin: 0 0 4px;
+    }
+    .vista-modal-close {
+      position: absolute; top: 14px; right: 14px; width: 28px; height: 28px;
+      border-radius: 50%; border: none; background: #f3f4f6; cursor: pointer;
+      font-size: 0.9rem; display: flex; align-items: center; justify-content: center;
+    }
+
+    /* History list */
+    .history-empty { font-size: 0.82rem; color: var(--text-muted); padding: 20px 0; text-align: center; }
+    .history-item {
+      border: 1px solid var(--border-soft); border-radius: 10px; padding: 10px 12px;
+      margin-top: 8px; background: #f9fbff;
+    }
+    .history-item-top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+    .history-item-job { font-weight: 700; font-size: 0.85rem; color: var(--text-main); }
+    .history-item-date { font-size: 0.7rem; color: var(--text-muted); white-space: nowrap; }
+    .history-item-meta { font-size: 0.76rem; color: var(--text-muted); margin-top: 2px; }
+    .history-item-actions { display: flex; gap: 6px; margin-top: 8px; }
+    .history-item-actions button {
+      flex: 1; padding: 6px 8px; font-size: 0.7rem; border-radius: 7px;
+      border: 1px solid var(--border-soft); background: #fff; cursor: pointer; font-weight: 700;
+      text-transform: none; letter-spacing: 0;
+    }
+    .history-item-actions button.primary { background: var(--vista-blue); color: #fff; border-color: var(--vista-blue); }
+    .history-clear-row { margin-top: 14px; text-align: center; }
+    .history-clear-row button {
+      background: none; border: none; color: #b91c1c; font-size: 0.74rem;
+      cursor: pointer; text-decoration: underline; font-weight: 600;
+    }
+
+    /* Photo annotation */
+    .annotate-canvas-wrap { position: relative; width: 100%; text-align: center; background: #111; border-radius: 10px; overflow: hidden; }
+    .annotate-canvas-wrap canvas { max-width: 100%; touch-action: none; display: block; margin: 0 auto; }
+    .annotate-toolbar { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; align-items: center; }
+    .annotate-toolbar button {
+      padding: 8px 12px; font-size: 0.75rem; border-radius: 8px; border: 1px solid var(--border-soft);
+      background: #f3f4f6; cursor: pointer; font-weight: 700; text-transform: none; letter-spacing: 0;
+    }
+    .annotate-toolbar button.active { background: var(--vista-blue); color: #fff; border-color: var(--vista-blue); }
+    .annotate-actions { display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end; }
 
     /* High-contrast theme for bright/sunlight conditions. Screen-only —
        generatePdf() draws the PDF from scratch with jsPDF and never reads
@@ -399,6 +505,14 @@
     @media (max-width: 700px) {
       .header-bar { flex-direction: column; align-items: flex-start; gap: 8px; }
       .page-title-main { font-size: 1.05rem; letter-spacing: 0.12em; }
+      .header-logo { max-width: 70%; align-self: center; }
+      .legend-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 6px; }
+      .legend-table { font-size: 0.68rem; }
+      .legend-num { width: 26px; }
+    }
+
+    @media (max-width: 420px) {
+      .legend-grid { grid-template-columns: 1fr; }
     }
 
     /* Client autocomplete */
@@ -837,7 +951,10 @@
 </head>
 
 <body>
-<button type="button" id="outdoorModeToggle" title="Toggle high-contrast outdoor mode for bright sunlight — does not affect the exported PDF">☀️ Outdoor Mode</button>
+<div class="top-controls-wrap">
+  <button type="button" id="outdoorModeToggle" title="Toggle high-contrast outdoor mode for bright sunlight — does not affect the exported PDF">☀️ Outdoor Mode</button>
+  <button type="button" id="historyBtn" title="View past submissions saved on this device">🕘 History</button>
+</div>
 <div class="page-wrap">
   <form id="hazardForm">
     <!-- PAGE 1 -->
@@ -878,11 +995,17 @@
             </div>
             <div>
               <label for="start_time">Start Time</label>
-              <input type="time" id="start_time" name="start_time">
+              <div class="time-now-wrap">
+                <input type="time" id="start_time" name="start_time">
+                <button type="button" class="btn-now" data-target="start_time">Now</button>
+              </div>
             </div>
             <div>
               <label for="completion_time">Form Completion Time</label>
-              <input type="time" id="completion_time" name="completion_time">
+              <div class="time-now-wrap">
+                <input type="time" id="completion_time" name="completion_time">
+                <button type="button" class="btn-now" data-target="completion_time">Now</button>
+              </div>
             </div>
           </div>
           <div class="row">
@@ -986,9 +1109,17 @@
           </div>
 
           <div class="row">
-            <div style="flex:1 1 40%;">
+            <div style="flex:1 1 30%;">
               <label for="working_supervisor_name">Contact Procedures – Call Supervisor: Name</label>
               <input type="text" id="working_supervisor_name" name="working_supervisor_name">
+            </div>
+            <div style="flex:1 1 20%;">
+              <label for="working_supervisor_phone">Supervisor Phone</label>
+              <div class="phone-quick-wrap">
+                <input type="tel" id="working_supervisor_phone" name="working_supervisor_phone" placeholder="403-555-0100">
+                <a href="#" id="callSupervisorBtn" class="btn-quick-call disabled" title="Call Supervisor">📞</a>
+                <a href="#" id="textSupervisorBtn" class="btn-quick-call disabled" title="Text Supervisor">💬</a>
+              </div>
             </div>
             <div style="flex:1 1 25%;">
               <label for="check_in_time">Check-in Time <span class="required-mark" id="req_check_in_time" style="display:none;color:#b91c1c;">*</span></label>
@@ -1106,7 +1237,8 @@
             <label><input type="checkbox" name="ppe_hearing"> Hearing Protection</label>
             <label><input type="checkbox" name="ppe_chaps"> Chainsaw Pants/Chaps</label>
             <label><input type="checkbox" name="ppe_first_aid"> Personal First Aid Kit</label>
-            <label><input type="checkbox" name="ppe_gas_monitor"> H2S, Methane, Oxygen, CO Monitor</label>
+            <label><input type="checkbox" name="ppe_gas_monitor"> Gas Monitor</label>
+            <label><input type="checkbox" name="ppe_spot_locator"> Spot Locator</label>
             <label>Other: <input type="text" name="ppe_other" style="width:160px;"></label>
           </div>
 
@@ -1219,6 +1351,7 @@
             <div class="section-note">Controls and ratings auto-suggest when you leave the hazard cell.</div>
           </div>
 
+          <div class="table-scroll-x">
           <table id="jobHazardsTable">
             <thead>
             <tr>
@@ -1274,6 +1407,7 @@
             </tr>
 </tbody>
           </table>
+          </div>
           <div class="row" style="margin-top:6px; justify-content:flex-end;">
             <div style="flex:0 0 auto; min-width:unset;">
               <button type="button" class="btn-secondary" id="addJobHazardRow">Add Row</button>
@@ -1394,7 +1528,7 @@
               <canvas id="pcSignature" class="signature-canvas"></canvas>
               <div class="signature-actions"><button type="button" class="btn-secondary" id="clearPcSig">Clear</button></div>
               <div class="signature-row">
-                <div><div class="signature-label">Name</div><input type="text" class="small-input" name="pc_name"></div>
+                <div><div class="signature-label">Name</div><input type="text" class="small-input" id="pc_name" name="pc_name"></div>
                 <div><div class="signature-label">Date</div><input type="date" class="small-input" name="pc_date"></div>
               </div>
             </div>
@@ -1404,7 +1538,7 @@
               <canvas id="saSignature" class="signature-canvas"></canvas>
               <div class="signature-actions"><button type="button" class="btn-secondary" id="clearSaSig">Clear</button></div>
               <div class="signature-row">
-                <div><div class="signature-label">Name</div><input type="text" class="small-input" name="sa_name"></div>
+                <div><div class="signature-label">Name</div><input type="text" class="small-input" id="sa_name" name="sa_name"></div>
                 <div><div class="signature-label">Date</div><input type="date" class="small-input" name="sa_date"></div>
               </div>
             </div>
@@ -1526,6 +1660,34 @@
 <!-- ══════════════════════════════════════════════════════
      BROOKFIELD FENCE PHOTO MODAL
      ══════════════════════════════════════════════════════ -->
+<div class="vista-modal" id="historyModal" role="dialog" aria-modal="true" aria-label="Submission History">
+  <div class="vista-modal-box">
+    <button type="button" class="vista-modal-close" id="historyModalClose">✕</button>
+    <div class="vista-modal-title">Submission History</div>
+    <div style="font-size:0.76rem;color:var(--text-muted);margin-bottom:6px;">Saved on this device only, after each successful export.</div>
+    <div id="historyListContainer"></div>
+  </div>
+</div>
+
+<div class="vista-modal" id="annotateModal" role="dialog" aria-modal="true" aria-label="Annotate Photo">
+  <div class="vista-modal-box" style="max-width:640px;">
+    <button type="button" class="vista-modal-close" id="annotateModalClose">✕</button>
+    <div class="vista-modal-title">Mark the Hazard</div>
+    <div style="font-size:0.76rem;color:var(--text-muted);margin-bottom:8px;">Draw an arrow or circle to point out what matters in this photo — optional.</div>
+    <div class="annotate-canvas-wrap"><canvas id="annotateCanvas"></canvas></div>
+    <div class="annotate-toolbar">
+      <button type="button" id="annotateToolArrow" class="active">➜ Arrow</button>
+      <button type="button" id="annotateToolCircle">◯ Circle</button>
+      <button type="button" id="annotateUndo">Undo</button>
+      <button type="button" id="annotateClear">Clear</button>
+    </div>
+    <div class="annotate-actions">
+      <button type="button" class="btn-secondary" id="annotateSkip">Skip Annotation</button>
+      <button type="button" class="btn-primary" id="annotateSave">Save Photo</button>
+    </div>
+  </div>
+</div>
+
 <div id="bfModal" role="dialog" aria-modal="true" aria-label="Brookfield Fence Photo Wizard">
   <div class="bf-modal-box" id="bfModalBox">
 
@@ -1608,7 +1770,7 @@
   </div>
 </div>
 
-<div class="version-stamp" id="versionStamp">v5.2</div>
+<div class="version-stamp" id="versionStamp">v5.8</div>
 
 <!-- OFFLINE NOTE:
      Put these files beside this HTML for offline use:
@@ -1806,6 +1968,506 @@
   bindRiskInputs();
 
   // ============================================================
+  // ONE-TAP CALL / TEXT — Supervisor and Hospital numbers
+  // ============================================================
+  (function initQuickCallButtons() {
+    function sanitizePhone(v) { return (v || '').replace(/[^\d+]/g, ''); }
+    function wireCallText(inputId, callBtnId, textBtnId) {
+      const input = document.getElementById(inputId);
+      const callBtn = document.getElementById(callBtnId);
+      const textBtn = textBtnId ? document.getElementById(textBtnId) : null;
+      if (!input || !callBtn) return;
+      function update() {
+        const num = sanitizePhone(input.value);
+        if (num) {
+          callBtn.href = 'tel:' + num;
+          callBtn.classList.remove('disabled');
+          if (textBtn) { textBtn.href = 'sms:' + num; textBtn.classList.remove('disabled'); }
+        } else {
+          callBtn.href = '#';
+          callBtn.classList.add('disabled');
+          if (textBtn) { textBtn.href = '#'; textBtn.classList.add('disabled'); }
+        }
+      }
+      input.addEventListener('input', update);
+      window.addEventListener('load', () => setTimeout(update, 700)); // after autosave restore
+      update();
+    }
+    wireCallText('working_supervisor_phone', 'callSupervisorBtn', 'textSupervisorBtn');
+  })();
+
+  // ============================================================
+  // LOCAL SUBMISSION HISTORY — saved on this device after each
+  // successful export, so a multi-day job doesn't mean retyping
+  // the same header every morning.
+  // ============================================================
+  (function initSubmissionHistory() {
+    const STORAGE_KEY = 'vista_submission_history';
+    const MAX_ENTRIES = 20;
+
+    function getHistory() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch (_) { return []; }
+    }
+    function setHistory(list) {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(list.slice(0, MAX_ENTRIES))); } catch (_) {}
+    }
+    function escHtmlH(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+    function fmtSavedAt(ts) {
+      return new Date(ts).toLocaleString('en-CA', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
+    }
+
+    function collectSnapshot() {
+      const v = id => (document.getElementById(id)?.value || '').trim();
+      const commonHazards = Array.from(document.querySelectorAll('#commonHazardsTable tbody tr'))
+        .filter(tr => tr.querySelector('td:first-child input[type="checkbox"]')?.checked)
+        .map(tr => (tr.children[1]?.textContent || '').trim());
+      const maxRow = (typeof getMaxJobHazardRow === "function") ? getMaxJobHazardRow() : 0;
+      const jobHazards = [];
+      for (let i = 1; i <= maxRow; i++) {
+        const task = (document.querySelector(`input[name="task_${i}"]`)?.value || '').trim();
+        const hazard = (document.querySelector(`input[name="hazard_${i}"]`)?.value || '').trim();
+        const f = (document.querySelector(`input[name="f_${i}"]`)?.value || '').trim();
+        const s = (document.querySelector(`input[name="s_${i}"]`)?.value || '').trim();
+        const p = (document.querySelector(`input[name="p_${i}"]`)?.value || '').trim();
+        const control = (document.querySelector(`textarea[name="control_${i}"]`)?.value || '').trim();
+        if (task || hazard || control) jobHazards.push({ task, hazard, f, s, p, control });
+      }
+      const ppe = Array.from(document.querySelectorAll('input[name^="ppe_"][type="checkbox"]:checked')).map(c => c.name);
+      return {
+        savedAt: Date.now(),
+        job_number: v('job_number'), client: v('client_name'), location: v('location'),
+        description: v('description'), developed_by: v('developed_by'),
+        working_supervisor_name: v('working_supervisor_name'), working_supervisor_phone: v('working_supervisor_phone'),
+        commonHazards, jobHazards, ppe,
+      };
+    }
+
+    function saveSubmission() {
+      const snap = collectSnapshot();
+      if (!snap.job_number && !snap.client && !snap.location) return; // nothing meaningful to save
+      const list = getHistory();
+      list.unshift(snap);
+      setHistory(list);
+    }
+    window.__vistaSaveSubmissionHistory = saveSubmission;
+
+    function setField(id, val) {
+      const el = document.getElementById(id);
+      if (el && val !== undefined) { el.value = val; el.dispatchEvent(new Event('input', { bubbles: true })); }
+    }
+
+    function loadSnapshot(entry) {
+      if (!entry) return;
+      if (!confirm("Load this job's info into the current form? Fields you've already filled in will be overwritten (signatures and photos are not affected).")) return;
+      setField('job_number', entry.job_number);
+      setField('client_name', entry.client);
+      setField('location', entry.location);
+      setField('description', entry.description);
+      setField('developed_by', entry.developed_by);
+      setField('working_supervisor_name', entry.working_supervisor_name);
+      setField('working_supervisor_phone', entry.working_supervisor_phone);
+
+      if (entry.commonHazards) {
+        document.querySelectorAll('#commonHazardsTable tbody tr').forEach(tr => {
+          const label = (tr.children[1]?.textContent || '').trim();
+          const cb = tr.querySelector('td:first-child input[type="checkbox"]');
+          if (cb) cb.checked = entry.commonHazards.includes(label);
+        });
+      }
+
+      if (entry.jobHazards && entry.jobHazards.length && typeof ensureJobHazardRows === 'function') {
+        ensureJobHazardRows(entry.jobHazards.length);
+        entry.jobHazards.forEach((row, i) => {
+          const n = i + 1;
+          setField(`task_${n}`, row.task);
+          setField(`hazard_${n}`, row.hazard);
+          ['f','s','p'].forEach(letter => {
+            const el = document.querySelector(`input[name="${letter}_${n}"]`);
+            if (el) { el.value = row[letter] || ''; el.dispatchEvent(new Event('input', { bubbles: true })); }
+          });
+          const cEl = document.querySelector(`textarea[name="control_${n}"]`);
+          if (cEl) { cEl.value = row.control || ''; cEl.dispatchEvent(new Event('input', { bubbles: true })); }
+        });
+      }
+
+      if (entry.ppe) {
+        document.querySelectorAll('input[name^="ppe_"][type="checkbox"]').forEach(cb => {
+          cb.checked = entry.ppe.includes(cb.name);
+        });
+      }
+
+      if (window.__vistaAutosaveSave) window.__vistaAutosaveSave();
+      closeHistoryModal();
+    }
+
+    function renderHistoryList() {
+      const container = document.getElementById('historyListContainer');
+      if (!container) return;
+      const list = getHistory();
+      if (!list.length) {
+        container.innerHTML = '<div class="history-empty">No saved submissions yet. They will show up here after your next export.</div>';
+        return;
+      }
+      container.innerHTML = list.map((entry, i) => `
+        <div class="history-item">
+          <div class="history-item-top">
+            <div class="history-item-job">${escHtmlH(entry.job_number || 'No job #')}${entry.client ? ' — ' + escHtmlH(entry.client) : ''}</div>
+            <div class="history-item-date">${fmtSavedAt(entry.savedAt)}</div>
+          </div>
+          <div class="history-item-meta">${escHtmlH(entry.location || '')}${entry.description ? ' · ' + escHtmlH(entry.description) : ''}</div>
+          <div class="history-item-meta">${(entry.jobHazards || []).length} job hazard row(s) · ${(entry.commonHazards || []).length} common hazard(s)</div>
+          <div class="history-item-actions">
+            <button type="button" class="load-history-btn primary" data-idx="${i}">Load into Form</button>
+            <button type="button" class="delete-history-btn" data-idx="${i}">Delete</button>
+          </div>
+        </div>
+      `).join('') + '<div class="history-clear-row"><button type="button" id="clearHistoryBtn">Clear all history</button></div>';
+
+      container.querySelectorAll('.load-history-btn').forEach(btn => {
+        btn.addEventListener('click', () => loadSnapshot(list[parseInt(btn.dataset.idx, 10)]));
+      });
+      container.querySelectorAll('.delete-history-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = parseInt(btn.dataset.idx, 10);
+          const l = getHistory(); l.splice(idx, 1); setHistory(l); renderHistoryList();
+        });
+      });
+      const clearBtn = document.getElementById('clearHistoryBtn');
+      if (clearBtn) clearBtn.addEventListener('click', () => {
+        if (confirm('Clear all saved submission history on this device?')) { setHistory([]); renderHistoryList(); }
+      });
+    }
+
+    const modal = document.getElementById('historyModal');
+    function openHistoryModal() { renderHistoryList(); if (modal) modal.classList.add('open'); }
+    function closeHistoryModal() { if (modal) modal.classList.remove('open'); }
+
+    const historyBtn = document.getElementById('historyBtn');
+    if (historyBtn) historyBtn.addEventListener('click', openHistoryModal);
+    const closeBtn = document.getElementById('historyModalClose');
+    if (closeBtn) closeBtn.addEventListener('click', closeHistoryModal);
+    if (modal) modal.addEventListener('click', e => { if (e.target === modal) closeHistoryModal(); });
+  })();
+
+  // ============================================================
+  // PHOTO ANNOTATION — draw an arrow or circle on a photo before
+  // it's attached, so "here's the hazard" is unambiguous.
+  // ============================================================
+  (function initPhotoAnnotation() {
+    const modal = document.getElementById('annotateModal');
+    const canvas = document.getElementById('annotateCanvas');
+    if (!modal || !canvas) return;
+
+    const closeBtn = document.getElementById('annotateModalClose');
+    const skipBtn = document.getElementById('annotateSkip');
+    const saveBtn = document.getElementById('annotateSave');
+    const undoBtn = document.getElementById('annotateUndo');
+    const clearBtn = document.getElementById('annotateClear');
+    const toolArrowBtn = document.getElementById('annotateToolArrow');
+    const toolCircleBtn = document.getElementById('annotateToolCircle');
+
+    const ctx = canvas.getContext('2d');
+    let baseImage = null;
+    let shapes = [];
+    let tool = 'arrow';
+    let drawing = false, startX = 0, startY = 0;
+    let resolvePromise = null;
+    let originalDataUrl = null;
+
+    function setTool(t) {
+      tool = t;
+      toolArrowBtn.classList.toggle('active', t === 'arrow');
+      toolCircleBtn.classList.toggle('active', t === 'circle');
+    }
+    toolArrowBtn.addEventListener('click', () => setTool('arrow'));
+    toolCircleBtn.addEventListener('click', () => setTool('circle'));
+
+    function drawShape(shape) {
+      ctx.strokeStyle = '#ff2d2d';
+      ctx.fillStyle = '#ff2d2d';
+      ctx.lineWidth = Math.max(3, canvas.width * 0.006);
+      if (shape.type === 'circle') {
+        const cx = (shape.x1 + shape.x2) / 2, cy = (shape.y1 + shape.y2) / 2;
+        const rx = Math.abs(shape.x2 - shape.x1) / 2, ry = Math.abs(shape.y2 - shape.y1) / 2;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, Math.max(rx, 8), Math.max(ry, 8), 0, 0, Math.PI * 2);
+        ctx.stroke();
+      } else {
+        const { x1, y1, x2, y2 } = shape;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+        const angle = Math.atan2(y2 - y1, x2 - x1);
+        const headLen = Math.max(14, canvas.width * 0.025);
+        ctx.beginPath();
+        ctx.moveTo(x2, y2);
+        ctx.lineTo(x2 - headLen * Math.cos(angle - Math.PI / 6), y2 - headLen * Math.sin(angle - Math.PI / 6));
+        ctx.lineTo(x2 - headLen * Math.cos(angle + Math.PI / 6), y2 - headLen * Math.sin(angle + Math.PI / 6));
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+
+    function redraw(previewShape) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (baseImage) ctx.drawImage(baseImage, 0, 0, canvas.width, canvas.height);
+      shapes.concat(previewShape ? [previewShape] : []).forEach(drawShape);
+    }
+
+    function getCanvasPos(evt) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const isTouch = evt.touches && evt.touches[0];
+      const clientX = isTouch ? evt.touches[0].clientX : evt.clientX;
+      const clientY = isTouch ? evt.touches[0].clientY : evt.clientY;
+      return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+    }
+
+    function startDraw(evt) { drawing = true; const p = getCanvasPos(evt); startX = p.x; startY = p.y; }
+    function moveDraw(evt) {
+      if (!drawing) return;
+      const p = getCanvasPos(evt);
+      redraw({ type: tool, x1: startX, y1: startY, x2: p.x, y2: p.y });
+    }
+    function endDraw(evt) {
+      if (!drawing) return;
+      drawing = false;
+      const p = getCanvasPos(evt);
+      if (Math.abs(p.x - startX) > 6 || Math.abs(p.y - startY) > 6) {
+        shapes.push({ type: tool, x1: startX, y1: startY, x2: p.x, y2: p.y });
+      }
+      redraw();
+    }
+
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', moveDraw);
+    canvas.addEventListener('mouseup', endDraw);
+    canvas.addEventListener('mouseleave', () => { if (drawing) { drawing = false; redraw(); } });
+    canvas.addEventListener('touchstart', e => { e.preventDefault(); startDraw(e); }, { passive: false });
+    canvas.addEventListener('touchmove', e => { e.preventDefault(); moveDraw(e); }, { passive: false });
+    canvas.addEventListener('touchend', e => { e.preventDefault(); endDraw(e); }, { passive: false });
+
+    undoBtn.addEventListener('click', () => { shapes.pop(); redraw(); });
+    clearBtn.addEventListener('click', () => { shapes = []; redraw(); });
+
+    function closeModal() { modal.classList.remove('open'); }
+    function finish(dataUrl) {
+      closeModal();
+      if (resolvePromise) { resolvePromise(dataUrl); resolvePromise = null; }
+    }
+
+    skipBtn.addEventListener('click', () => finish(originalDataUrl));
+    closeBtn.addEventListener('click', () => finish(originalDataUrl));
+    modal.addEventListener('click', e => { if (e.target === modal) finish(originalDataUrl); });
+
+    saveBtn.addEventListener('click', () => {
+      redraw();
+      try { finish(canvas.toDataURL('image/jpeg', 0.85)); }
+      catch (_) { finish(originalDataUrl); }
+    });
+
+    window.__vistaAnnotatePhoto = function (dataUrl, width, height) {
+      return new Promise((resolve) => {
+        resolvePromise = resolve;
+        originalDataUrl = dataUrl;
+        shapes = [];
+        setTool('arrow');
+        const img = new Image();
+        img.onload = () => {
+          baseImage = img;
+          canvas.width = width;
+          canvas.height = height;
+          redraw();
+          modal.classList.add('open');
+        };
+        img.src = dataUrl;
+      });
+    };
+  })();
+
+
+  // ============================================================
+  // "NOW" BUTTONS — one-tap fill for time fields
+  // ============================================================
+  document.querySelectorAll('.btn-now').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = document.getElementById(btn.dataset.target);
+      if (!target) return;
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2, '0');
+      const mm = String(now.getMinutes()).padStart(2, '0');
+      target.value = `${hh}:${mm}`;
+      target.dispatchEvent(new Event('input', { bubbles: true }));
+      target.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  });
+
+  // ============================================================
+  // SAVED NAMES AUTOCOMPLETE — learns crew names as they're typed,
+  // no setup required. Shared across Developed By / Supervisor /
+  // Party Chief / Rodman so a name typed once suggests everywhere.
+  // ============================================================
+  (function initNameAutocomplete() {
+    const STORAGE_KEY = 'vista_known_names';
+    const FIELD_IDS = ['developed_by', 'working_supervisor_name', 'pc_name', 'sa_name'];
+
+    function getNames() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch (_) { return []; }
+    }
+    function saveName(name) {
+      if (!name || !name.trim()) return;
+      name = name.trim();
+      let names = getNames().filter(n => n.toLowerCase() !== name.toLowerCase());
+      names.unshift(name);
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(names.slice(0, 50))); } catch (_) {}
+    }
+    function escHtml(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+    function highlight(text, q) {
+      if (!q) return escHtml(text);
+      const re = new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+      return escHtml(text).replace(re, '<mark>$1</mark>');
+    }
+
+    function attach(inputId) {
+      const input = document.getElementById(inputId);
+      if (!input) return;
+
+      let wrap = input.parentElement;
+      if (!wrap.classList.contains('client-wrap')) {
+        wrap = document.createElement('div');
+        wrap.className = 'client-wrap';
+        input.parentNode.insertBefore(wrap, input);
+        wrap.appendChild(input);
+      }
+      const dropdown = document.createElement('div');
+      dropdown.className = 'client-dropdown';
+      wrap.appendChild(dropdown);
+
+      let activeIdx = -1, matches = [];
+
+      function openDropdown() {
+        const q = input.value.trim().toLowerCase();
+        const all = getNames();
+        matches = q ? all.filter(n => n.toLowerCase().includes(q)) : all;
+        if (!matches.length) { closeDropdown(); return; }
+        activeIdx = -1;
+        dropdown.innerHTML = matches.map((n, i) =>
+          '<div class="client-option" data-idx="' + i + '">' + highlight(n, q) + '</div>').join('');
+        dropdown.classList.add('open');
+      }
+      function closeDropdown() {
+        dropdown.classList.remove('open'); dropdown.innerHTML = ''; activeIdx = -1; matches = [];
+      }
+      function selectName(name) {
+        input.value = name;
+        closeDropdown();
+        saveName(name);
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        if (window.__vistaAutosaveSave) window.__vistaAutosaveSave();
+      }
+
+      input.addEventListener('focus', openDropdown);
+      input.addEventListener('input', openDropdown);
+      input.addEventListener('keydown', e => {
+        if (!dropdown.classList.contains('open')) return;
+        const opts = dropdown.querySelectorAll('.client-option');
+        if (e.key === 'ArrowDown') { e.preventDefault(); activeIdx = Math.min(activeIdx + 1, opts.length - 1); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); activeIdx = Math.max(activeIdx - 1, -1); }
+        else if (e.key === 'Enter' && activeIdx >= 0) { e.preventDefault(); selectName(matches[activeIdx]); return; }
+        else if (e.key === 'Escape') { closeDropdown(); return; }
+        opts.forEach((o, i) => o.classList.toggle('active', i === activeIdx));
+      });
+      dropdown.addEventListener('mousedown', e => {
+        const opt = e.target.closest('.client-option');
+        if (!opt) return;
+        e.preventDefault();
+        selectName(matches[parseInt(opt.dataset.idx, 10)]);
+      });
+      input.addEventListener('blur', () => {
+        setTimeout(() => { if (!wrap.contains(document.activeElement)) closeDropdown(); }, 150);
+        if (input.value.trim()) saveName(input.value);
+      });
+      document.addEventListener('click', e => { if (!wrap.contains(e.target)) closeDropdown(); });
+    }
+
+    FIELD_IDS.forEach(attach);
+  })();
+
+  // ============================================================
+  // VOICE DICTATION — mic button on long text fields. Uses the Web
+  // Speech API where available (Chrome/Android). Safari/iPadOS does
+  // not implement that API, so on iPad this instead focuses the
+  // field and points to the built-in dictation mic on the iPad
+  // keyboard, which works natively with no code needed.
+  // ============================================================
+  (function initVoiceInput() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let activeRec = null, activeBtn = null;
+
+    function showHint(wrap) {
+      if (wrap.querySelector('.voice-hint')) return;
+      const hint = document.createElement('div');
+      hint.className = 'voice-hint';
+      hint.textContent = 'Tap the mic on your keyboard to dictate';
+      wrap.appendChild(hint);
+      setTimeout(() => hint.remove(), 3000);
+    }
+
+    function attachVoiceButton(textarea) {
+      if (!textarea || textarea.dataset.voiceAttached) return;
+      textarea.dataset.voiceAttached = '1';
+
+      let wrap = textarea.parentElement;
+      if (!wrap.classList.contains('voice-wrap')) {
+        wrap = document.createElement('div');
+        wrap.className = 'voice-wrap';
+        textarea.parentNode.insertBefore(wrap, textarea);
+        wrap.appendChild(textarea);
+      }
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'voice-btn';
+      btn.title = 'Dictate';
+      btn.textContent = '🎤';
+      wrap.appendChild(btn);
+
+      btn.addEventListener('click', () => {
+        if (!SR) { textarea.focus(); showHint(wrap); return; }
+        if (activeRec && activeBtn === btn) { activeRec.stop(); return; }
+        if (activeRec) activeRec.stop();
+
+        const rec = new SR();
+        rec.lang = 'en-CA';
+        rec.continuous = true;
+        rec.interimResults = false;
+        let base = textarea.value;
+        if (base && !/\s$/.test(base)) base += ' ';
+        rec.onresult = e => {
+          let finalTranscript = '';
+          for (let i = e.resultIndex; i < e.results.length; i++) {
+            if (e.results[i].isFinal) finalTranscript += e.results[i][0].transcript;
+          }
+          if (finalTranscript) {
+            textarea.value = base + finalTranscript.trim() + ' ';
+            base = textarea.value;
+            textarea.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+        };
+        rec.onerror = () => { btn.classList.remove('recording'); activeRec = null; activeBtn = null; };
+        rec.onend = () => { btn.classList.remove('recording'); activeRec = null; activeBtn = null; };
+        rec.start();
+        activeRec = rec; activeBtn = btn;
+        btn.classList.add('recording');
+      });
+    }
+
+    window.__vistaAttachVoiceButton = attachVoiceButton;
+
+    attachVoiceButton(document.getElementById('tailgate_minutes'));
+    document.querySelectorAll('.control-text').forEach(attachVoiceButton);
+  })();
+
+  // ============================================================
   // CHECK-IN INTERVAL / COMMUNICATION METHOD — "Other" reveal
   // ============================================================
   function wireOtherSelect(selectId, otherId) {
@@ -1873,33 +2535,62 @@
     });
   }
 
+  // Resizes/re-encodes a photo before it's attached, so a handful of
+  // full-resolution phone photos don't turn into a huge, slow-to-generate PDF.
+  function compressPhotoFile(file, maxDim = 2200, quality = 0.78) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          let { width, height } = img;
+          const scale = Math.min(maxDim / width, maxDim / height, 1);
+          width = Math.round(width * scale);
+          height = Math.round(height * scale);
+          const c = document.createElement('canvas');
+          c.width = width; c.height = height;
+          const ctx = c.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve({ dataUrl: c.toDataURL('image/jpeg', quality), width, height });
+        };
+        img.onerror = () => reject(new Error('Could not read image'));
+        img.src = e.target.result;
+      };
+      reader.onerror = () => reject(new Error('Could not read file'));
+      reader.readAsDataURL(file);
+    });
+  }
+
   const sitePhotoInput = document.getElementById('sitePhotoInput');
   const addSitePhotoBtn = document.getElementById('addSitePhotoBtn');
   if (addSitePhotoBtn && sitePhotoInput) {
     addSitePhotoBtn.addEventListener('click', () => sitePhotoInput.click());
-    sitePhotoInput.addEventListener('change', (e) => {
+    sitePhotoInput.addEventListener('change', async (e) => {
       const files = Array.from(e.target.files || []);
-      files.forEach(file => {
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-          const dataUrl = ev.target.result;
-          const img = new Image();
-          img.onload = () => {
-            sitePhotos.push({
-              dataUrl,
-              width: img.naturalWidth,
-              height: img.naturalHeight,
-              timestamp: fmtSitePhotoTimestamp(new Date()),
-              caption: '',
-              mime: file.type && file.type.indexOf('png') !== -1 ? 'PNG' : 'JPEG',
-            });
-            renderSitePhotoThumbs();
-            if (window.__vistaAutosaveSave) window.__vistaAutosaveSave();
-          };
-          img.src = dataUrl;
-        };
-        reader.readAsDataURL(file);
-      });
+      const originalLabel = addSitePhotoBtn.textContent;
+      addSitePhotoBtn.disabled = true;
+      addSitePhotoBtn.textContent = 'Processing…';
+      for (const file of files) {
+        if (!file.type || file.type.indexOf('image/') !== 0) continue;
+        try {
+          const { dataUrl, width, height } = await compressPhotoFile(file);
+          const finalDataUrl = (window.__vistaAnnotatePhoto)
+            ? await window.__vistaAnnotatePhoto(dataUrl, width, height)
+            : dataUrl;
+          sitePhotos.push({
+            dataUrl: finalDataUrl, width, height,
+            timestamp: fmtSitePhotoTimestamp(new Date()),
+            caption: '',
+            mime: 'JPEG',
+          });
+          renderSitePhotoThumbs();
+          if (window.__vistaAutosaveSave) window.__vistaAutosaveSave();
+        } catch (err) {
+          console.warn('Photo processing failed:', err);
+        }
+      }
+      addSitePhotoBtn.disabled = false;
+      addSitePhotoBtn.textContent = originalLabel;
       e.target.value = '';
     });
   }
@@ -2175,6 +2866,9 @@
 
     bindRiskInputs(card);
     initHazardAutoSuggest(); // safe: has per-input guard
+    if (window.__vistaAttachVoiceButton) {
+      card.querySelectorAll('.control-text').forEach(window.__vistaAttachVoiceButton);
+    }
     return currentMax;
   }
 
@@ -3971,6 +4665,7 @@ return clone;
       check_in_interval: id("check_in_interval") === "Other" ? id("check_in_interval_other") : id("check_in_interval"),
       communication_method: id("communication_method") === "Other" ? id("communication_method_other") : id("communication_method"),
       working_supervisor_name: id("working_supervisor_name"),
+      working_supervisor_phone: id("working_supervisor_phone"),
       check_in_time: id("check_in_time"), check_out_time: id("check_out_time"),
       veh_tires: cb("veh_tires"), veh_oil: cb("veh_oil"), veh_fuel: cb("veh_fuel"),
       veh_washer: cb("veh_washer"), veh_lights: cb("veh_lights"), veh_tiedowns: cb("veh_tiedowns"),
@@ -3994,15 +4689,16 @@ return clone;
 
     // PPE
     const PPE_MAP = {
-      ppe_hardhat:"Hard Hat", ppe_hiviz:"Hi-Vis Vest", ppe_safety_boots:"Safety Boots",
-      ppe_gloves:"Gloves", ppe_eye:"Eye Protection", ppe_hearing:"Hearing Protection",
-      ppe_sunscreen:"Sunscreen", ppe_reflective:"Reflective Vest", ppe_face_shield:"Face Shield",
-      ppe_respirator:"Respirator", ppe_fall_arr:"Fall Arrest", ppe_sat_phone:"Sat Phone",
-      ppe_bear_spray:"Bear Spray", ppe_first_aid:"First Aid Kit",
+      ppe_hardhat:"Hardhat", ppe_atv_helmet:"ATV Helmets", ppe_signs:"Signs",
+      ppe_eye:"Eye Protection", ppe_gloves:"Gloves", ppe_csa_footwear:"CSA Approved Footwear",
+      ppe_winter:"Winter Clothing", ppe_reflective:"Reflective Clothing",
+      ppe_frc:"Fire Retardant Coveralls", ppe_hearing:"Hearing Protection",
+      ppe_chaps:"Chainsaw Pants/Chaps", ppe_first_aid:"Personal First Aid Kit",
+      ppe_gas_monitor:"Gas Monitor", ppe_spot_locator:"Spot Locator",
     };
     const ppeChecked = Object.keys(PPE_MAP).filter(n => cb(n)).map(n => PPE_MAP[n]);
-    const ppeOtherEl = document.querySelector('input[name="ppe_other_desc"]');
-    if (cb("ppe_other") && ppeOtherEl?.value?.trim()) ppeChecked.push(ppeOtherEl.value.trim());
+    const ppeOtherEl = document.querySelector('input[name="ppe_other"]');
+    if (ppeOtherEl?.value?.trim()) ppeChecked.push(ppeOtherEl.value.trim());
 
     // Common hazards
     const commonRows = [];
@@ -4224,7 +4920,7 @@ return clone;
     pdf.text("DATE",         L + cPad,          y);
     pdf.text("START TIME",   L + c4 + cPad,     y);
     pdf.text("END TIME",     L + c4*2 + cPad,   y);
-    pdf.text("DESCRIPTION",  L + c4*3 + cPad,   y);
+    pdf.text("DESCRIPTION OF WORK", L + c4*3 + cPad,   y);
     F("normal", 8, P.text);
     pdf.text(fitVal(fmtDate(d.date),           cMax, 8), L + cPad,        y + 4);
     pdf.text(fitVal(fmtTime(d.start_time),     cMax, 8), L + c4 + cPad,   y + 4);
@@ -4249,7 +4945,8 @@ return clone;
       (d.pic_other&&d.pic_other_desc)&&d.pic_other_desc].filter(Boolean);
     const picStr = pics.length ? pics.join(", ") : "None";
     const picLines = wrap(picStr, tgRW - 5, 7);
-    const rightH = 4 + 9 + 9 + 4 + (picLines.length * 3.6) + 3;
+    const commentLines = d.sidewalk_comments ? wrap(d.sidewalk_comments, tgRW - 5, 7) : [];
+    const rightH = 4 + 9 + 9 + 4 + (picLines.length * 3.6) + (commentLines.length ? 4 + commentLines.length * 3.6 : 0) + 3;
 
     // Left: tailgate minutes
     if (d.tailgate_minutes) {
@@ -4272,6 +4969,12 @@ return clone;
       F("bold", 6, P.muted); pdf.text("PHOTOS TAKEN", tgRX+2, ry);
       F("normal", 7, P.text);
       pdf.text(picLines, tgRX+2, ry+4);
+      ry += 4 + picLines.length * 3.6;
+      if (commentLines.length) {
+        F("bold", 6, P.muted); pdf.text("COMMENTS", tgRX+2, ry);
+        F("normal", 7, P.text);
+        pdf.text(commentLines, tgRX+2, ry+4);
+      }
       y += tgH + 3;
     } else {
       // No tailgate notes — just show site conditions in a single row
@@ -4282,6 +4985,13 @@ return clone;
       ];
       inRow.forEach(([lbl,val],i) => lv(lbl, val, L+1+i*(CW/3), y, CW/3-2));
       y += 9;
+      if (d.sidewalk_comments) {
+        F("bold", 6, P.muted); pdf.text("COMMENTS", L+1, y);
+        F("normal", 7, P.text);
+        const cLines = wrap(d.sidewalk_comments, CW - 2, 7);
+        pdf.text(cLines, L+1, y+4);
+        y += 4 + cLines.length * 3.6;
+      }
     }
     hline(y); y += 3;
 
@@ -4294,8 +5004,9 @@ return clone;
     lv("Check-in Time",   fmtTime(d.check_in_time),                             L+wa*3+1, y, wa-2);
     lv("Check-out Time",  fmtTime(d.check_out_time),                            L+wa*4+1, y, wa-2);
     y += 9;
-    if (d.working_supervisor_name) {
+    if (d.working_supervisor_name || d.working_supervisor_phone) {
       lv("Supervisor Name", d.working_supervisor_name, L+1, y, CW/2-2);
+      lv("Supervisor Phone", d.working_supervisor_phone, L+CW/2+1, y, CW/2-2);
       y += 9;
     }
     hline(y); y += 3;
@@ -4303,10 +5014,10 @@ return clone;
     // ── EQUIPMENT INSPECTION (compact grid) ─────────────────────────────────
     secHead("Daily Equipment Inspection");
     const eqData = [
-      { label:"Vehicle",          items:[["Tires",d.veh_tires],["Oil",d.veh_oil],["Fuel",d.veh_fuel],["Washer Fluid",d.veh_washer],["Lights",d.veh_lights],["Tie-Downs",d.veh_tiedowns]] },
+      { label:"Vehicle",          items:[["Tires",d.veh_tires],["Oil",d.veh_oil],["Fuel",d.veh_fuel],["Washer Fluid",d.veh_washer],["Lights",d.veh_lights],["Tie-Downs",d.veh_tiedowns]], other:d.veh_other },
       { label:"ATV / Snowmobile", items:[["Tires/Track",d.atv_tires],["Oil/Fuel",d.atv_oil_fuel],["Lights",d.atv_lights],["Brakes",d.atv_brakes]] },
       { label:"Generator",        items:[["Oil",d.gen_oil],["Fuel",d.gen_fuel],["Ext. Cord",d.gen_cord]] },
-      { label:"Chainsaw",         items:[["Oil",d.saw_oil],["Fuel",d.saw_fuel],["Chain",d.saw_chain],["Guard",d.saw_guard]] },
+      { label:"Chainsaw",         items:[["Oil",d.saw_oil],["Fuel",d.saw_fuel],["Chain",d.saw_chain],["Guard",d.saw_guard]], other:d.saw_other },
       { label:"Trailer",          items:[["Tires",d.trl_tires],["Lights",d.trl_lights],["Safety Chains",d.trl_chains],["Deck",d.trl_deck],["Lic. Plate",d.trl_plate]] },
     ];
     const eqLblW = 36, eqItemW = (CW - eqLblW) / 6, eqRowH = 7;
@@ -4319,11 +5030,13 @@ return clone;
     y += 5;
 
     eqData.forEach((row, ri) => {
-      np(eqRowH + 1);
+      const otherLines = row.other ? wrap("Other: " + row.other, CW - eqLblW - 4, 6.5) : [];
+      const rh = otherLines.length ? eqRowH + otherLines.length * 3.4 + 1.5 : eqRowH;
+      np(rh + 1);
       const bg = ri%2===0 ? P.white : P.bgRow;
       fill(bg); draw(P.border); lw(0.2);
-      rect(L, y, eqLblW, eqRowH, "FD");
-      rect(L+eqLblW, y, CW-eqLblW, eqRowH, "FD");
+      rect(L, y, eqLblW, rh, "FD");
+      rect(L+eqLblW, y, CW-eqLblW, rh, "FD");
       F("bold", 7, P.text); pdf.text(row.label, L+2, y+4.5);
       const perRow = 6;
       const iw = (CW - eqLblW - 2) / perRow;
@@ -4334,7 +5047,11 @@ return clone;
         F("normal", 6.5, P.text);
         pdf.text(lbl, ix+3.8, iy+2.4);
       });
-      y += eqRowH;
+      if (otherLines.length) {
+        F("normal", 6.5, P.muted);
+        pdf.text(otherLines, L + eqLblW + 2, y + eqRowH + 2);
+      }
+      y += rh;
     });
     y += 3; hline(y); y += 3;
 
@@ -4342,29 +5059,29 @@ return clone;
     np(18);
     secHead("Personal Protective Equipment");
     const ALL_PPE = [
-      ["ppe_hardhat","Hard Hat"], ["ppe_hiviz","Hi-Vis Vest"], ["ppe_safety_boots","Safety Boots"],
-      ["ppe_gloves","Gloves"], ["ppe_eye","Eye Protection"], ["ppe_hearing","Hearing Protection"],
-      ["ppe_sunscreen","Sunscreen"], ["ppe_reflective","Reflective Vest"],
-      ["ppe_face_shield","Face Shield"], ["ppe_respirator","Respirator"],
-      ["ppe_fall_arr","Fall Arrest"], ["ppe_sat_phone","Sat Phone"],
-      ["ppe_bear_spray","Bear Spray"], ["ppe_first_aid","First Aid Kit"],
+      ["ppe_hardhat","Hardhat"], ["ppe_atv_helmet","ATV Helmets"], ["ppe_signs","Signs"],
+      ["ppe_eye","Eye Protection"], ["ppe_gloves","Gloves"], ["ppe_csa_footwear","CSA Approved Footwear"],
+      ["ppe_winter","Winter Clothing"], ["ppe_reflective","Reflective Clothing"],
+      ["ppe_frc","Fire Retardant Coveralls"], ["ppe_hearing","Hearing Protection"],
+      ["ppe_chaps","Chainsaw Pants/Chaps"], ["ppe_first_aid","Personal First Aid Kit"],
+      ["ppe_gas_monitor","Gas Monitor"], ["ppe_spot_locator","Spot Locator"],
     ];
+    const ppeOtherEl2 = document.querySelector('input[name="ppe_other"]');
+    const ppeOtherVal = ppeOtherEl2?.value?.trim();
+    const ppeRenderItems = ALL_PPE.map(([key, label]) => ({ key, label, isOther: false }));
+    if (ppeOtherVal) ppeRenderItems.push({ key: null, label: "Other: " + ppeOtherVal, isOther: true });
+
     const ppePerRow = 5, ppeCW = CW / ppePerRow, ppeRowH = 6.5;
-    for (let i = 0; i < ALL_PPE.length; i += ppePerRow) {
-      ALL_PPE.slice(i, i + ppePerRow).forEach(([key, label], j) => {
-        const checked = cb(key);
+    for (let i = 0; i < ppeRenderItems.length; i += ppePerRow) {
+      ppeRenderItems.slice(i, i + ppePerRow).forEach((item, j) => {
+        const checked = item.isOther ? true : cb(item.key);
         const xi = L + j * ppeCW;
         cbox(checked, xi + 1, y + 0.8, 3.2);
         F("normal", 7.5, checked ? P.text : P.muted);
-        pdf.text(label, xi + 5.8, y + 3.4);
+        const fit = fitLegendLabel(item.label, ppeCW - 6.3, 7.5, 5);
+        F("normal", fit.size, checked ? P.text : P.muted);
+        pdf.text(fit.text, xi + 5.8, y + 3.4);
       });
-      y += ppeRowH;
-    }
-    // Custom PPE if filled in
-    const ppeOtherEl2 = document.querySelector('input[name="ppe_other_desc"]');
-    if (cb("ppe_other") && ppeOtherEl2?.value?.trim()) {
-      cbox(true, L + 1, y + 0.8, 3.2);
-      F("normal", 7.5, P.text); pdf.text(ppeOtherEl2.value.trim(), L + 5.8, y + 3.4);
       y += ppeRowH;
     }
     hline(y); y += 3;
@@ -4411,21 +5128,23 @@ return clone;
         r:L+jW.task+jW.haz+jW.f+jW.s+jW.p,
         ctrl:L+jW.task+jW.haz+jW.f+jW.s+jW.p+jW.r
       };
-      // Header
-      fill(P.bgSec); draw(P.border); lw(0.2);
-      [["task","Task"],["haz","Hazard"],["f","F"],["s","S"],["p","P"],["r","R"],["ctrl","Control Measures"]]
-        .forEach(([k,lbl]) => {
-          rect(jX[k], y, jW[k], 5.5, "FD");
-          F("bold", 6.5, P.navy);
-          pdf.text(lbl, jX[k]+jW[k]/2, y+3.8, {align:"center"});
-        });
-      y += 5.5;
+      function drawJobHazardsHeader() {
+        fill(P.bgSec); draw(P.border); lw(0.2);
+        [["task","Job Tasks"],["haz","Hazards"],["f","F"],["s","S"],["p","P"],["r","R"],["ctrl","Control Measures"]]
+          .forEach(([k,lbl]) => {
+            rect(jX[k], y, jW[k], 5.5, "FD");
+            F("bold", 6.5, P.navy);
+            pdf.text(lbl, jX[k]+jW[k]/2, y+3.8, {align:"center"});
+          });
+        y += 5.5;
+      }
+      drawJobHazardsHeader();
       jobHazards.forEach((row, ri) => {
         const tL = wrap(row.task,    jW.task-2, 7);
         const hL = wrap(row.hazard,  jW.haz-2,  7);
         const cL = wrap(row.control, jW.ctrl-2, 7);
         const rh = Math.max(7, Math.max(tL.length, hL.length, cL.length)*4+3);
-        np(rh+1);
+        if (np(rh+1)) drawJobHazardsHeader();
         const rNum = parseInt(row.r,10);
         const severe = !isNaN(rNum) && rNum >= 100;
         fill(severe ? [255,243,243] : (ri%2===0 ? P.white : P.bgRow));
@@ -4679,6 +5398,7 @@ return clone;
         const pdf  = await generatePdf();
         const blob = pdf.output('blob');
         await savePdfBlob(blob, getFinalFileName());
+        if (window.__vistaSaveSubmissionHistory) window.__vistaSaveSubmissionHistory();
       } catch (e) {
         if (e.name !== 'AbortError' && e.name !== 'ValidationError') {
           console.error('Download failed:', e);
@@ -4697,6 +5417,7 @@ return clone;
         const pdf  = await generatePdf();
         const blob = pdf.output('blob');
         await savePdfBlob(blob, getFinalFileName());
+        if (window.__vistaSaveSubmissionHistory) window.__vistaSaveSubmissionHistory();
       } catch (e) {
         if (e.name !== 'AbortError' && e.name !== 'ValidationError') console.error('Share failed:', e);
       } finally {
