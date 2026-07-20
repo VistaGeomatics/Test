@@ -1565,7 +1565,7 @@
               <div class="section-title">Site Photos</div>
               <div class="section-note">Exported as separate pages after the main report</div>
             </div>
-            <input type="file" id="sitePhotoInput" accept="image/*" capture="environment" multiple style="display:none;">
+            <input type="file" id="sitePhotoInput" accept="image/*" multiple style="display:none;">
             <button type="button" class="btn-secondary" id="addSitePhotoBtn">+ Add Photo</button>
             <div class="site-photo-grid" id="sitePhotoThumbs"></div>
           </div>
@@ -1679,6 +1679,8 @@
     <div class="annotate-toolbar">
       <button type="button" id="annotateToolArrow" class="active">➜ Arrow</button>
       <button type="button" id="annotateToolCircle">◯ Circle</button>
+      <button type="button" id="annotateToolDraw">✏️ Draw</button>
+      <button type="button" id="annotateToolText">🔤 Text</button>
       <button type="button" id="annotateUndo">Undo</button>
       <button type="button" id="annotateClear">Clear</button>
     </div>
@@ -2213,12 +2215,15 @@
     const clearBtn = document.getElementById('annotateClear');
     const toolArrowBtn = document.getElementById('annotateToolArrow');
     const toolCircleBtn = document.getElementById('annotateToolCircle');
+    const toolDrawBtn = document.getElementById('annotateToolDraw');
+    const toolTextBtn = document.getElementById('annotateToolText');
 
     const ctx = canvas.getContext('2d');
     let baseImage = null;
     let shapes = [];
     let tool = 'arrow';
     let drawing = false, startX = 0, startY = 0;
+    let currentPoints = [];
     let resolvePromise = null;
     let originalDataUrl = null;
 
@@ -2226,9 +2231,13 @@
       tool = t;
       toolArrowBtn.classList.toggle('active', t === 'arrow');
       toolCircleBtn.classList.toggle('active', t === 'circle');
+      toolDrawBtn.classList.toggle('active', t === 'draw');
+      toolTextBtn.classList.toggle('active', t === 'text');
     }
     toolArrowBtn.addEventListener('click', () => setTool('arrow'));
     toolCircleBtn.addEventListener('click', () => setTool('circle'));
+    toolDrawBtn.addEventListener('click', () => setTool('draw'));
+    toolTextBtn.addEventListener('click', () => setTool('text'));
 
     function drawShape(shape) {
       ctx.strokeStyle = '#ff2d2d';
@@ -2240,6 +2249,23 @@
         ctx.beginPath();
         ctx.ellipse(cx, cy, Math.max(rx, 8), Math.max(ry, 8), 0, 0, Math.PI * 2);
         ctx.stroke();
+      } else if (shape.type === 'draw') {
+        if (!shape.points || shape.points.length < 2) return;
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        ctx.moveTo(shape.points[0].x, shape.points[0].y);
+        for (let i = 1; i < shape.points.length; i++) ctx.lineTo(shape.points[i].x, shape.points[i].y);
+        ctx.stroke();
+      } else if (shape.type === 'text') {
+        const fontSize = Math.max(20, canvas.width * 0.04);
+        ctx.font = `bold ${fontSize}px Inter, sans-serif`;
+        ctx.textBaseline = 'top';
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = Math.max(3, fontSize * 0.12);
+        ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+        ctx.strokeText(shape.text, shape.x, shape.y);
+        ctx.fillStyle = '#ff2d2d';
+        ctx.fillText(shape.text, shape.x, shape.y);
       } else {
         const { x1, y1, x2, y2 } = shape;
         ctx.beginPath();
@@ -2271,16 +2297,41 @@
       return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
     }
 
-    function startDraw(evt) { drawing = true; const p = getCanvasPos(evt); startX = p.x; startY = p.y; }
+    function startDraw(evt) {
+      drawing = true;
+      const p = getCanvasPos(evt);
+      startX = p.x; startY = p.y;
+      if (tool === 'draw') currentPoints = [p];
+    }
     function moveDraw(evt) {
       if (!drawing) return;
       const p = getCanvasPos(evt);
-      redraw({ type: tool, x1: startX, y1: startY, x2: p.x, y2: p.y });
+      if (tool === 'draw') {
+        currentPoints.push(p);
+        redraw({ type: 'draw', points: currentPoints });
+      } else if (tool === 'text') {
+        // text is placed on tap, not dragged — nothing to preview
+      } else {
+        redraw({ type: tool, x1: startX, y1: startY, x2: p.x, y2: p.y });
+      }
     }
     function endDraw(evt) {
       if (!drawing) return;
       drawing = false;
       const p = getCanvasPos(evt);
+
+      if (tool === 'text') {
+        const txt = window.prompt('Label text:');
+        if (txt && txt.trim()) shapes.push({ type: 'text', x: startX, y: startY, text: txt.trim() });
+        redraw();
+        return;
+      }
+      if (tool === 'draw') {
+        if (currentPoints.length > 1) shapes.push({ type: 'draw', points: currentPoints.slice() });
+        currentPoints = [];
+        redraw();
+        return;
+      }
       if (Math.abs(p.x - startX) > 6 || Math.abs(p.y - startY) > 6) {
         shapes.push({ type: tool, x1: startX, y1: startY, x2: p.x, y2: p.y });
       }
@@ -2290,7 +2341,7 @@
     canvas.addEventListener('mousedown', startDraw);
     canvas.addEventListener('mousemove', moveDraw);
     canvas.addEventListener('mouseup', endDraw);
-    canvas.addEventListener('mouseleave', () => { if (drawing) { drawing = false; redraw(); } });
+    canvas.addEventListener('mouseleave', () => { if (drawing) { drawing = false; currentPoints = []; redraw(); } });
     canvas.addEventListener('touchstart', e => { e.preventDefault(); startDraw(e); }, { passive: false });
     canvas.addEventListener('touchmove', e => { e.preventDefault(); moveDraw(e); }, { passive: false });
     canvas.addEventListener('touchend', e => { e.preventDefault(); endDraw(e); }, { passive: false });
@@ -5579,6 +5630,12 @@ return clone;
       state.signatures.saSignature = signatureToDataUrl('saSignature');
       state.signatures.clientSignature = signatureToDataUrl('clientSignature');
 
+      // site photos (markups are already baked into each photo's dataUrl)
+      state.sitePhotos = sitePhotos.map(p => ({
+        dataUrl: p.dataUrl, width: p.width, height: p.height,
+        timestamp: p.timestamp, caption: p.caption || '', mime: p.mime || 'JPEG'
+      }));
+
       // job hazard rows count (so we can rebuild dynamic rows on restore)
       state.jobHazardRowCount = getMaxJobHazardRow();
 
@@ -5634,6 +5691,17 @@ return clone;
         drawSignatureFromDataUrl('saSignature', sigs.saSignature);
         drawSignatureFromDataUrl('clientSignature', sigs.clientSignature);
       } catch (_) {}
+
+      // site photos
+      try {
+        if (Array.isArray(state.sitePhotos) && state.sitePhotos.length) {
+          sitePhotos.length = 0;
+          state.sitePhotos.forEach(p => {
+            if (p && p.dataUrl) sitePhotos.push(p);
+          });
+          renderSitePhotoThumbs();
+        }
+      } catch (_) {}
     }
 
     function loadState() {
@@ -5651,11 +5719,19 @@ return clone;
     function saveStateDebounced() {
       clearTimeout(saveTimer);
       saveTimer = setTimeout(() => {
+        const state = collectState();
         try {
-          const state = collectState();
           localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(state));
         } catch (e) {
-          console.warn('Autosave save failed:', e);
+          // Likely a quota error from photo data URLs — fall back to saving
+          // fields/signatures only, so at least that part of the form survives.
+          console.warn('Autosave save failed (falling back to no-photos save):', e);
+          try {
+            const lightState = Object.assign({}, state, { sitePhotos: [] });
+            localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(lightState));
+          } catch (e2) {
+            console.warn('Autosave fallback save also failed:', e2);
+          }
         }
       }, SAVE_DEBOUNCE_MS);
     }
